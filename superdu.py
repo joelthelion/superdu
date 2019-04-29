@@ -101,10 +101,20 @@ def process_du_output(tuples, thresh):
                 except RootPruneException:
                     # Refusing to prune the root node
                     pass
-    for dir_, size in sorted(dirs.items(), key=itemgetter(1)):
-        if size >= thresh:  # The root node might be small
-            print("{:_<80} {}".format(dir_+' ', sizeof_fmt(size*1024)))
+    return dirs
 
+def read_file(filename):
+    """ Read du output from a file """
+    tuples = [l.rstrip("\n").split("\t") for l in open(args.f)]
+    return tuples
+
+def run_du(options):
+    """ Run 'du' and returned parsed results """
+    output, err = Popen(["du"]+options+[args.path],
+                        stdout=PIPE).communicate()
+    output = output.decode("utf-8")
+    tuples = [l.split("\t") for l in output.splitlines()]
+    return tuples
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -120,17 +130,22 @@ if __name__ == '__main__':
     parser.add_argument("path", default=".", nargs="?")
     args = parser.parse_args()
     if args.f is not None:
-        tuples = [l.split("\t") for l in open(args.f).readlines()]
-        tuples = [(size, path[:-1]) for size, path in tuples]
+        tuples = read_file(args.f)
     else:
         options = []
         if args.x:
             options.append("-x")
         options.extend(["-t", args.t])
-        output, err = Popen(["du"]+options+[args.path],
-                            stdout=PIPE).communicate()
-        output = output.decode("utf-8")
-        tuples = [l.split("\t") for l in output.splitlines()]
-        # tuples = [(p,s) for p,s in tuples if s is not None]
+        tuples = run_du(options)
     threshold = parseSize(args.t)/1024
-    process_du_output(tuples, thresh=threshold)
+
+    dirs = process_du_output(tuples, thresh=threshold)
+
+    # Format output
+    sorted_dirs = sorted(((d,s) for d, s in dirs.items() if s>=threshold),
+            key=itemgetter(1))
+    max_width = max(len(d) for d,s in sorted_dirs)
+    width = min(max_width+5, 150)
+    print(width)
+    for dir_, size in sorted_dirs:
+        print(("{:_<"+str(width)+"} {}").format(dir_+' ', sizeof_fmt(size*1024)))
