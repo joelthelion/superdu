@@ -103,10 +103,13 @@ def process_du_output(tuples, thresh):
                     pass
     return dirs
 
+
 def read_file(filename):
     """ Read du output from a file """
-    tuples = [l.rstrip("\n").split("\t") for l in open(filename)]
+    with open(filename) as f:
+        tuples = [l.rstrip("\n").split("\t") for l in f]
     return tuples
+
 
 def run_du(options):
     """ Run 'du' and returned parsed results """
@@ -115,6 +118,7 @@ def run_du(options):
     output = output.decode("utf-8")
     tuples = [l.split("\t") for l in output.splitlines()]
     return tuples
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -142,10 +146,10 @@ if __name__ == '__main__':
     dirs = process_du_output(tuples, thresh=threshold)
 
     # Format output
-    sorted_dirs = sorted(((d,s) for d, s in dirs.items() if s>=threshold),
-            key=itemgetter(1))
-    max_width = max(len(d) for d,s in sorted_dirs)
+    sorted_dirs = sorted(((d, s) for d, s in dirs.items() if s >= threshold),
+                         key=itemgetter(1))
+    max_width = max(len(d) for d, s in sorted_dirs)
     width = min(max_width+5, 150)
-    print(width)
     for dir_, size in sorted_dirs:
-        print(("{:_<"+str(width)+"} {}").format(dir_+' ', sizeof_fmt(size*1024)))
+        print(("{:_<"+str(width)+"} {}").
+              format(dir_+' ', sizeof_fmt(size*1024)))
