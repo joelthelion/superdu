@@ -105,7 +105,7 @@ def process_du_output(tuples, thresh):
 
 def read_file(filename):
     """ Read du output from a file """
-    tuples = [l.rstrip("\n").split("\t") for l in open(args.f)]
+    tuples = [l.rstrip("\n").split("\t") for l in open(filename)]
     return tuples
 
 def run_du(options):
